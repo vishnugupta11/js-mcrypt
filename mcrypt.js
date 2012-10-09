@@ -32,17 +32,17 @@
  * and the number of octets in the key.
  */
  var ciphers={			//	block size,	key size
-  "MCRYPT_RIJNDAEL_x"	:[	16,			0],
-  "MCRYPT_RIJNDAEL_128"	:[	16,			32],
-  "MCRYPT_RIJNDAEL_192"	:[	16,			48],
-  "MCRYPT_RIJNDAEL_256"	:[	16,			64],
+  "rijndael_x"	:[	16,			0],
+  "rijndael_128"	:[	16,			32],
+  "rijndael_192"	:[	16,			48],
+  "rijndael_256"	:[	16,			64],
  }
  
  /* Storage
  * for saving values used to speed up repeated calls
  */
  var SpeedStorage={
- "MCRYPT_RIJNDAEL_X":{
+ "rijndael_x":{
 		"ExpandedKeys":{}
 		},
  }
@@ -60,23 +60,23 @@
  * the function should modify the block as its output
  */
  var blockCipherCalls={};
- blockCipherCalls.MCRYPT_RIJNDAEL_x=function(cipher,block,key,encrypt){
-	if(!SpeedStorage.MCRYPT_RIJNDAEL_X.ExpandedKeys[key]){
+ blockCipherCalls.rijndael_x=function(cipher,block,key,encrypt){
+	if(!SpeedStorage.rijndael_x.ExpandedKeys[key]){
 		var keyA=new Array(key.length);
 		for(var i=key.length-1 ; i>=0 ; i--)
 			keyA[i]=key.charCodeAt(i);
 		Rijndael.ExpandKey(keyA);
-		SpeedStorage.MCRYPT_RIJNDAEL_X.ExpandedKeys[key]=keyA;
+		SpeedStorage.rijndael_x.ExpandedKeys[key]=keyA;
 	}
 	if(encrypt)
-		Rijndael.Encrypt(block,SpeedStorage.MCRYPT_RIJNDAEL_X.ExpandedKeys[key]);
+		Rijndael.Encrypt(block,SpeedStorage.rijndael_x.ExpandedKeys[key]);
 	else
-		Rijndael.Decrypt(block,SpeedStorage.MCRYPT_RIJNDAEL_X.ExpandedKeys[key]);
+		Rijndael.Decrypt(block,SpeedStorage.rijndael_x.ExpandedKeys[key]);
 	return block;
  };
- blockCipherCalls.MCRYPT_RIJNDAEL_128=blockCipherCalls.MCRYPT_RIJNDAEL_x;
- blockCipherCalls.MCRYPT_RIJNDAEL_192=blockCipherCalls.MCRYPT_RIJNDAEL_x;
- blockCipherCalls.MCRYPT_RIJNDAEL_256=blockCipherCalls.MCRYPT_RIJNDAEL_x;
+ blockCipherCalls.rijndael_128=blockCipherCalls.rijndael_x;
+ blockCipherCalls.rijndael_192=blockCipherCalls.rijndael_x;
+ blockCipherCalls.rijndael_256=blockCipherCalls.rijndael_x;
 
  
  /**********************
@@ -112,7 +112,7 @@
  
 pub.Crypt=function(encrypt,text,IV,key, cipher, mode){
 	if(key) cKey=key; else key=cKey;
-	if(cipher) cCipher=cipher; else cipher=cCipher;
+	if(cipher){cipher=cipher.replace('-','_'); cCipher=cipher;} else cipher=cCipher;
 	if(mode) cMode=mode; else mode=cMode;
 	if(!text)
 		return true;
@@ -200,7 +200,7 @@ pub.Crypt=function(encrypt,text,IV,key, cipher, mode){
  **********/
   
  var cMode='cbc';
- var cCipher='MCRYPT_RIJNDAEL_128';
+ var cCipher='rijndael_128';
  var cKey='12345678911234567892123456789312';
 
 
