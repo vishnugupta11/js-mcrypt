@@ -18,116 +18,129 @@
  */
 var Rijndael=Rijndael?Rijndael: new function(){
 /*
- * http://point-at-infinity.org/jsaes/
  *
- * This is a javascript implementation of the AES block cipher. Key lengths 
- * of 128, 192 and 256 bits are supported.
+ * This is a javascript implementation of the rijndael block cipher. Key lengths 
+ * of 128, 192 and 256 bits, and block lengths of 128, 192, and 256 bit in any
+ * combination are supported.
  *
  * The well-functioning of the encryption/decryption routines has been 
  * verified for different key lengths with the test vectors given in 
  * FIPS-197, Appendix C.
  *
  * The following code example enciphers the plaintext block '00 11 22 .. EE FF'
- * with the 256 bit key '00 01 02 .. 1E 1F'.
- *
- *    AES_Init();
+ * with the 256 bit key '12345678911234567892123456789312'.
  *
  *    var block = new Array(16);
  *    for(var i = 0; i < 16; i++)
  *        block[i] = 0x11 * i;
  *
- *    var key = new Array(32);
- *    for(var i = 0; i < 32; i++)
- *        key[i] = i;
+ *    var key = '12345678911234567892123456789312';
  *
- *    AES_ExpandKey(key);
- *    AES_Encrypt(block, key);
- *
- *    AES_Done();
- *
- * Report bugs to: jsaes AT point-at-infinity.org
+ *    rijndael.Encrypt(block, key);
  *
  */
 
 /******************************************************************************/
 
 
-/*
-   AES_ExpandKey: expand a cipher key. Depending on the desired encryption 
-   strength of 128, 192 or 256 bits 'key' has to be a byte array of length 
-   16, 24 or 32, respectively. The key expansion is done "in place", meaning 
-   that the array 'key' is modified.
-*/
-var AES={};
 //public
-AES.ExpandKey=function(key) {
-  var kl = key.length, ks, Rcon = 1;
-  switch (kl) {
-    case 16: ks = 16 * (10 + 1); break;
-    case 24: ks = 16 * (12 + 1); break;
-    case 32: ks = 16 * (14 + 1); break;
-    default: 
-      alert("AES_ExpandKey: Only key lengths of 16, 24 or 32 bytes allowed!");
-  }
-  for(var i = kl; i < ks; i += 4) {
-    var temp = key.slice(i - 4, i);
-    if (i % kl == 0) {
-      temp = new Array(AES_Sbox[temp[1]] ^ Rcon, AES_Sbox[temp[2]], 
-	AES_Sbox[temp[3]], AES_Sbox[temp[0]]); 
-      if ((Rcon <<= 1) >= 256)
-	Rcon ^= 0x11b;
-    }
-    else if ((kl > 24) && (i % kl == 16))
-      temp = new Array(AES_Sbox[temp[0]], AES_Sbox[temp[1]], 
-	AES_Sbox[temp[2]], AES_Sbox[temp[3]]);       
-    for(var j = 0; j < 4; j++)
-      key[i + j] = key[i + j - kl] ^ temp[j];
-  }
+var pub={};
+
+pub.Encrypt=function(block, key) {
+	crypt(block,key,true);
+}
+pub.Decrypt=function(block, key) {
+	crypt(block,key,false);
 }
 
-/* 
-   AES_Encrypt: encrypt the 16 byte array 'block' with the previously 
-   expanded key 'key'.
-*/
-//public
-AES.Encrypt=function(block, key) {
-  var l = key.length;
-  AES_AddRoundKey(block, key.slice(0, 16));
-  for(var i = 16; i < l - 16; i += 16) {
-    AES_SubBytes(block, AES_Sbox);
-    AES_ShiftRows(block, AES_ShiftRowTab);
-    AES_MixColumns(block);
-    AES_AddRoundKey(block, key.slice(i, i + 16));
+//private
+
+var sizes=[16,24,32];
+
+	//key bytes	16,	24,	32		block bytes
+var rounds=[[	10,	12,	14],//	16
+			[	12,	12,	14],//	24
+			[	14,	14,	14]];//	32
+
+var expandedKeys={};//object to keep keys we've already expanded in.
+
+var ExpandKey=function(key) {
+  if(!expandedKeys[key]){
+	  var kl = key.length, ks, Rcon = 1;
+	  ks=15<<5;
+	  keyA=new Array(ks);
+	  for(var i = 0; i < kl; i++)
+		keyA[i]=key.charCodeAt(i);
+	  for(var i = kl; i < ks; i += 4) {
+		var temp = keyA.slice(i - 4, i);
+		if (i % kl == 0) {
+		  temp = [	Sbox[temp[1]] ^ Rcon,	Sbox[temp[2]], 
+					Sbox[temp[3]], 			Sbox[temp[0]]]; 
+		  if ((Rcon <<= 1) >= 256)
+			Rcon ^= 0x11b;
+		}
+		else if ((kl > 24) && (i % kl == 16))
+		  temp = [Sbox[temp[0]], Sbox[temp[1]], 
+				  Sbox[temp[2]], Sbox[temp[3]]];       
+		for(var j = 0; j < 4; j++)
+		  keyA[i+j] = keyA[ i+j-kl ] ^ temp[j];
+	  }
+	  expandedKeys[key]=keyA;
   }
-  AES_SubBytes(block, AES_Sbox);
-  AES_ShiftRows(block, AES_ShiftRowTab);
-  AES_AddRoundKey(block, key.slice(i, l));
+  return expandedKeys[key];
 }
 
-/* 
-   AES_Decrypt: decrypt the 16 byte array 'block' with the previously 
-   expanded key 'key'.
-*/
-//public
-AES.Decrypt=function(block, key) {
-  var l = key.length;
-  AES_AddRoundKey(block, key.slice(l - 16, l));
-  AES_ShiftRows(block, AES_ShiftRowTab_Inv);
-  AES_SubBytes(block, AES_Sbox_Inv);
-  for(var i = l - 32; i >= 16; i -= 16) {
-    AES_AddRoundKey(block, key.slice(i, i + 16));
-    AES_MixColumns_Inv(block);
-    AES_ShiftRows(block, AES_ShiftRowTab_Inv);
-    AES_SubBytes(block, AES_Sbox_Inv);
+var crypt=function(block, key,encrypt) {
+  var bB=block.length;
+  var kB = key.length;
+  var bBi=0;
+  var kBi=0;
+  switch(bB){
+	case 32:bBi++;
+	case 24:bBi++;
+	case 16:break;
+	default: throw 'rijndael: Unsupported block size: '+block.length;
   }
-  AES_AddRoundKey(block, key.slice(0, 16));
+  switch(kB){
+	case 32:kBi++;
+	case 24:kBi++;
+	case 16:break;
+	default: throw 'rijndael: Unsupported key size: '+key.length;
+  }
+  var r=rounds[bBi][kBi];
+  key=ExpandKey(key);
+  var end=r*bB;
+  if(encrypt){
+	  AddRoundKey(block, key.slice(0, bB));
+	  var SRT=ShiftRowTab[bBi];
+	  for(var i = bB; i < end; i += bB) {
+		SubBytes(block, Sbox);
+		ShiftRows(block, SRT);
+		MixColumns(block);
+		AddRoundKey(block, key.slice(i, i + bB));
+	  }
+	  SubBytes(block, Sbox);
+	  ShiftRows(block, SRT);
+	  AddRoundKey(block, key.slice(i, i+bB));
+  }
+  else{ //decrypt
+	  AddRoundKey(block, key.slice(end, end+bB));
+	  var SRT=ShiftRowTab_Inv[bBi];
+	  ShiftRows(block, SRT);
+	  SubBytes(block, Sbox_Inv);
+	  for(var i = end-bB; i >= bB; i -= bB) {
+		AddRoundKey(block, key.slice(i, i + bB));
+		MixColumns_Inv(block);
+		ShiftRows(block, SRT);
+		SubBytes(block, Sbox_Inv);
+	  }
+	  AddRoundKey(block, key.slice(0, bB));
+  }
 }
-
 /******************************************************************************/
 
 /* The following lookup tables and functions are for internal use only! */
-//private
-var AES_Sbox = new Array(99,124,119,123,242,107,111,197,48,1,103,43,254,215,171,
+var Sbox = new Array(99,124,119,123,242,107,111,197,48,1,103,43,254,215,171,
   118,202,130,201,125,250,89,71,240,173,212,162,175,156,164,114,192,183,253,
   147,38,54,63,247,204,52,165,229,241,113,216,49,21,4,199,35,195,24,150,5,154,
   7,18,128,226,235,39,178,117,9,131,44,26,27,110,90,160,82,59,214,179,41,227,
@@ -140,66 +153,73 @@ var AES_Sbox = new Array(99,124,119,123,242,107,111,197,48,1,103,43,254,215,171,
   116,31,75,189,139,138,112,62,181,102,72,3,246,14,97,53,87,185,134,193,29,
   158,225,248,152,17,105,217,142,148,155,30,135,233,206,85,40,223,140,161,
   137,13,191,230,66,104,65,153,45,15,176,84,187,22);
-//private
-var AES_ShiftRowTab = new Array(0,5,10,15,4,9,14,3,8,13,2,7,12,1,6,11);
-//private
-var AES_Sbox_Inv = new Array(256);
+		//row	0	1	2	3		block Bytes
+var rowshifts=[[0,	1,	2,	3],		//16
+			   [0,	1,	2,	3],		//24
+			   [0,	1,	3,	4]];	//32
+
+var ShiftRowTab = Array(3);
+for(var i=0;i<3;i++){
+	ShiftRowTab[i]=Array(sizes[i]);
+	for(var j=sizes[i];j>=0;j--)
+		ShiftRowTab[i][j]=(j+(rowshifts[i][j&3]<<2))%sizes[i];
+}
+var Sbox_Inv = new Array(256);
   for(var i = 0; i < 256; i++)
-    AES_Sbox_Inv[AES_Sbox[i]] = i;
-//private
-var AES_ShiftRowTab_Inv = new Array(16);
-for(var i = 0; i < 16; i++)
-	AES_ShiftRowTab_Inv[AES_ShiftRowTab[i]] = i;
-//private
-var AES_xtime = new Array(256);
+    Sbox_Inv[Sbox[i]] = i;
+var ShiftRowTab_Inv = Array(3);
+for(var i=0;i<3;i++){
+	ShiftRowTab_Inv[i]=Array(sizes[i]);
+	for(var j=sizes[i];j>=0;j--)
+		ShiftRowTab_Inv[i][ShiftRowTab[i][j]]=j;
+}
+var xtime = new Array(256);
 for(var i = 0; i < 128; i++) {
-	AES_xtime[i] = i << 1;
-	AES_xtime[128 + i] = (i << 1) ^ 0x1b;
+	xtime[i] = i << 1;
+	xtime[128 + i] = (i << 1) ^ 0x1b;
 }
 
-
-//private
-var AES_SubBytes=function(state, sbox) {
-  for(var i = 0; i < 16; i++)
+var SubBytes=function(state, sbox) {
+  for(var i = state.length-1; i>=0; i--)
     state[i] = sbox[state[i]];  
 }
-//private
-var AES_AddRoundKey=function (state, rkey) {
-  for(var i = 0; i < 16; i++)
+
+var AddRoundKey=function (state, rkey) {
+  for(var i=state.length-1 ; i >=0 ; i--)
     state[i] ^= rkey[i];
 }
-//private
-var AES_ShiftRows=function(state, shifttab) {
-  var h = new Array().concat(state);
-  for(var i = 0; i < 16; i++)
+
+var ShiftRows=function(state, shifttab) {
+  var h = state.slice(0);
+  for(var i = state.length-1 ; i >=0; i--)
     state[i] = h[shifttab[i]];
 }
-//private
-var AES_MixColumns= function(state) {
-  for(var i = 0; i < 16; i += 4) {
+
+var MixColumns= function(state) {
+  for(var i = state.length-4; i >=0; i -= 4) {
     var s0 = state[i + 0], s1 = state[i + 1];
     var s2 = state[i + 2], s3 = state[i + 3];
     var h = s0 ^ s1 ^ s2 ^ s3;
-    state[i + 0] ^= h ^ AES_xtime[s0 ^ s1];
-    state[i + 1] ^= h ^ AES_xtime[s1 ^ s2];
-    state[i + 2] ^= h ^ AES_xtime[s2 ^ s3];
-    state[i + 3] ^= h ^ AES_xtime[s3 ^ s0];
+    state[i + 0] ^= h ^ xtime[s0 ^ s1];
+    state[i + 1] ^= h ^ xtime[s1 ^ s2];
+    state[i + 2] ^= h ^ xtime[s2 ^ s3];
+    state[i + 3] ^= h ^ xtime[s3 ^ s0];
   }
 }
-//private
-var AES_MixColumns_Inv=function(state) {
-  for(var i = 0; i < 16; i += 4) {
+
+var MixColumns_Inv=function(state) {
+  for(var i = state.length-4; i >=0; i -= 4) {
     var s0 = state[i + 0], s1 = state[i + 1];
     var s2 = state[i + 2], s3 = state[i + 3];
     var h = s0 ^ s1 ^ s2 ^ s3;
-    var xh = AES_xtime[h];
-    var h1 = AES_xtime[AES_xtime[xh ^ s0 ^ s2]] ^ h;
-    var h2 = AES_xtime[AES_xtime[xh ^ s1 ^ s3]] ^ h;
-    state[i + 0] ^= h1 ^ AES_xtime[s0 ^ s1];
-    state[i + 1] ^= h2 ^ AES_xtime[s1 ^ s2];
-    state[i + 2] ^= h1 ^ AES_xtime[s2 ^ s3];
-    state[i + 3] ^= h2 ^ AES_xtime[s3 ^ s0];
+    var xh = xtime[h];
+    var h1 = xtime[xtime[xh ^ s0 ^ s2]] ^ h;
+    var h2 = xtime[xtime[xh ^ s1 ^ s3]] ^ h;
+    state[i + 0] ^= h1 ^ xtime[s0 ^ s1];
+    state[i + 1] ^= h2 ^ xtime[s1 ^ s2];
+    state[i + 2] ^= h1 ^ xtime[s2 ^ s3];
+    state[i + 3] ^= h2 ^ xtime[s3 ^ s0];
   }
 }
-return AES;
+return pub;
 };

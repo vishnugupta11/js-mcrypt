@@ -32,19 +32,9 @@
  * and the number of octets in the key.
  */
  var ciphers={			//	block size,	key size
-  "rijndael_x"	:[	16,			0],
-  "rijndael_128"	:[	16,			32],
-  "rijndael_192"	:[	16,			48],
-  "rijndael_256"	:[	16,			64],
- }
- 
- /* Storage
- * for saving values used to speed up repeated calls
- */
- var SpeedStorage={
- "rijndael_x":{
-		"ExpandedKeys":{}
-		},
+  "rijndael-128"	:[	16,			32],
+  "rijndael-192"	:[	24,			32],
+  "rijndael-256"	:[	32,			32],
  }
  
  /* blockCipherCalls
@@ -60,23 +50,15 @@
  * the function should modify the block as its output
  */
  var blockCipherCalls={};
- blockCipherCalls.rijndael_x=function(cipher,block,key,encrypt){
-	if(!SpeedStorage.rijndael_x.ExpandedKeys[key]){
-		var keyA=new Array(key.length);
-		for(var i=key.length-1 ; i>=0 ; i--)
-			keyA[i]=key.charCodeAt(i);
-		Rijndael.ExpandKey(keyA);
-		SpeedStorage.rijndael_x.ExpandedKeys[key]=keyA;
-	}
+ blockCipherCalls['rijndael-128']=function(cipher,block,key,encrypt){
 	if(encrypt)
-		Rijndael.Encrypt(block,SpeedStorage.rijndael_x.ExpandedKeys[key]);
+		Rijndael.Encrypt(block,key);
 	else
-		Rijndael.Decrypt(block,SpeedStorage.rijndael_x.ExpandedKeys[key]);
+		Rijndael.Decrypt(block,key);
 	return block;
  };
- blockCipherCalls.rijndael_128=blockCipherCalls.rijndael_x;
- blockCipherCalls.rijndael_192=blockCipherCalls.rijndael_x;
- blockCipherCalls.rijndael_256=blockCipherCalls.rijndael_x;
+ blockCipherCalls['rijndael-192']=blockCipherCalls['rijndael-128'];
+ blockCipherCalls['rijndael-256']=blockCipherCalls['rijndael-128'];
 
  
  /**********************
@@ -112,7 +94,7 @@
  
 pub.Crypt=function(encrypt,text,IV,key, cipher, mode){
 	if(key) cKey=key; else key=cKey;
-	if(cipher){cipher=cipher.replace('-','_'); cCipher=cipher;} else cipher=cCipher;
+	if(cipher) cCipher=cipher; else cipher=cCipher;
 	if(mode) cMode=mode; else mode=cMode;
 	if(!text)
 		return true;
@@ -194,13 +176,22 @@ pub.Crypt=function(encrypt,text,IV,key, cipher, mode){
 	}
 	return false;
 };
+
+pub.get_key_size=function(cipher,mode){
+	return ciphers[cipher][1];
+}
+
+pub.get_iv_size=function(cipher,mode){
+	return ciphers[cipher][0];
+}
+
  
  /**********
  * Private *
  **********/
   
  var cMode='cbc';
- var cCipher='rijndael_128';
+ var cCipher='rijndael-128';
  var cKey='12345678911234567892123456789312';
 
 
