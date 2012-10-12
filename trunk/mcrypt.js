@@ -17,7 +17,14 @@
  *  02111-1307 USA
  */
  
+ 
+ //this creates a static class mcrypt that is already initialized
  var mcrypt=mcrypt?mcrypt:new function(){
+ 
+ //this allows the user to create instances of this class that keep
+ //track of their own key, cipher, and mode
+ //calling syntax becomes var myMcrypt=new mcrypt();
+ //var mcrypt=function(){
   /**********
  * Private *
  **********/
