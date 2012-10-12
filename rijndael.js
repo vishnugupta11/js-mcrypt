@@ -42,7 +42,6 @@ var Rijndael=Rijndael?Rijndael: new function(){
 
 /******************************************************************************/
 
-
 //public
 var pub={};
 
