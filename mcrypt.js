@@ -177,13 +177,50 @@ pub.Crypt=function(encrypt,text,IV,key, cipher, mode){
 	return false;
 };
 
+//Gets the block size of the specified cipher
+pub.get_block_size=function(cipher,mode){
+	if(!cipher) cipher=cCipher;
+	if(!ciphers[cipher])
+		return false;
+	return ciphers[cipher][0];
+}
+
+//Gets the name of the specified cipher
+pub.get_cipher_name=function(cipher){
+	if(!cipher) cipher=cCipher;
+	if(!ciphers[cipher])
+		return false;
+	return cipher;
+}
+
+//Returns the size of the IV belonging to a specific cipher/mode combination
+pub.get_iv_size=function(cipher,mode){
+	if(!cipher) cipher=cCipher;
+	if(!ciphers[cipher])
+		return false;
+	return ciphers[cipher][0];
+}
+
+//Gets the key size of the specified cipher
 pub.get_key_size=function(cipher,mode){
+	if(!cipher) cipher=cCipher;
+	if(!ciphers[cipher])
+		return false;
 	return ciphers[cipher][1];
 }
 
-pub.get_iv_size=function(cipher,mode){
-	return ciphers[cipher][0];
+//Gets an array of all supported ciphers
+pub.list_algorithms=function(){
+	var ret=[];
+	for(var i in ciphers)
+		ret.push(i);
+	return ret;
 }
+
+pub.list_modes=function(){
+	return ['ecb','cbc','ncfb','nofb'];
+}
+
 
  
  /**********

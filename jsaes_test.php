@@ -37,15 +37,15 @@ $data=json_encode(array(
 	'crypted'=>$crypted,
 	'plain'=>$plain));
 ?>
-
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html>
 <head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <script type="text/javascript" src="rijndael.js"></script>
 <script type="text/javascript" src="mcrypt.js"></script>
 </head>
 <body>
-<?php echo mcrypt_get_key_size('rijndael-128','cbc');?>
-
+<div style="float:left;">
 <form name="main" action="" method="GET">
 <table>
 <tr><td>Key:</td><td><input name="key" size="48" onchange="data.key=this.value; setCrypt();"/></td></tr>
@@ -64,22 +64,38 @@ $data=json_encode(array(
 <tr><td>Hex Plain Text:</td>
 	<td><textarea name="hex_m" onchange="data.m=hex2bin(this.value); encrypt();"></textarea></td></tr>
 <tr><td>PHP Decrypted Text:</td>
-	<td><textarea disabled="disabled"><?php echo chunk_split(bin2hex($plain),2,' ')?></textarea></td></tr>
+	<td><textarea disabled="disabled"><?php echo chunk_split(strtoupper(bin2hex($plain)),2,' ')?></textarea></td></tr>
 
 <tr><td>Cipher Text:</td>
 	<td><textarea name="c" onchange="data.c=this.value; decrypt();"></textarea></td></tr>
 <tr><td>Hex Cipher Text:</td>
 	<td><textarea name="hex_c" onchange="data.c=hex2bin(this.value); decrypt();"></textarea></td></tr>
 <tr><td>PHP Encrypted Text:</td>
-	<td><textarea disabled="disabled"><?php echo chunk_split(bin2hex($crypted),2,' ')?></textarea></td></tr>
+	<td><textarea disabled="disabled"><?php echo chunk_split(strtoupper(bin2hex($crypted)),2,' ')?></textarea></td></tr>
 
 </table>
 Check With PHP's Mcrypt:<input type="submit" value="Go"/>
 </form>
-
+</div>
+<h2>Java Script Mcrypt</h2>
+<p>This is a demo page for a javascript class that tries to implement a javascript version of PHP's mcrypt. This class just takes blocks ciphers and gives a common interface to them and extends their capability to encrypt things by enabling <a href="http://en.wikipedia.org/wiki/Block_cipher_modes_of_operation">modes of operation</a>.</p>
+<p>The drop-down list of cyphers are all of the block cyphers that PHP's mcrypt uses. The disabled ones have not been incorporated into this library yet. If you know of a javascript implementation of one of the disabled cyphers I would be glad to hear about it on the <a href="https://code.google.com/p/js-mcrypt/">Google Code Page for this project</a>.
+<p>The drop-down list of modes of operation is again populated with all of the modes that PHP's mcrypt uses. Similarly the disabled options have not been implemented in this class. The next modes I plan on adding are cfb, and ofb. If you would like to assist, please check out the <a href="https://code.google.com/p/js-mcrypt/">Google Code Page for this project</a>.
+<p>Changing any option except the cypher texts will trigger the encryption with the new options. Changing the cypher text will trigger decryption. The php verification will only occur by submitting the form. If you're curious how the php is implemented, the source for this page is available on the <a href="https://code.google.com/p/js-mcrypt/">Google Code Page for this project</a>.</p>
 <script type="text/javascript">
 <!--
-var test='<?php ?>';
+var temp=mcrypt.list_algorithms();
+var sel=document.main.crypt.childNodes;
+for(var i=sel.length-1 ; i>=0 ; i--)
+	if(sel[i].tagName == 'OPTION' && temp.indexOf(sel[i].value)==-1)
+		sel[i].disabled=true;
+temp=mcrypt.list_modes();
+sel=document.main.mode.childNodes;
+for(var i=sel.length-1 ; i>=0 ; i--)
+	if(sel[i].tagName == 'OPTION' && temp.indexOf(sel[i].value)==-1)
+		sel[i].disabled=true;
+
+		
 var data=<?php echo $data?>;
 
 
@@ -92,8 +108,8 @@ var setCrypt=function(){
 	
 	document.main.key.value=data.key;
 	document.main.hex_key.value=bin2hex(data.key);
-	
-	mcrypt.Crypt(false,null,null, data.key, document.main.crypt.value, document.main.mode.value);
+
+	mcrypt.Crypt(null,null,null, data.key, document.main.crypt.value, document.main.mode.value);
 	
 	encrypt();
 }
