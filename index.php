@@ -30,12 +30,12 @@ function echo_options($options,$value,$keyed=false){
 }
 
 $data=json_encode(array(
-	'key'=>$key,
-	'iv'=>$iv,
-	'c'=>$c,
-	'm'=>$m,
-	'crypted'=>$crypted,
-	'plain'=>$plain));
+	'key'=>utf8_encode($key),
+	'iv'=>utf8_encode($iv),
+	'c'=>utf8_encode($c),
+	'm'=>utf8_encode($m),
+	'crypted'=>utf8_encode($crypted),
+	'plain'=>utf8_encode($plain)));
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html>
@@ -79,8 +79,8 @@ Check With PHP's Mcrypt:<input type="submit" value="Go"/>
 </div>
 <h2>Java Script Mcrypt</h2>
 <p>This is a demo page for a javascript class that tries to implement a javascript version of PHP's mcrypt. This class just takes blocks ciphers and gives a common interface to them and extends their capability to encrypt things by enabling <a href="http://en.wikipedia.org/wiki/Block_cipher_modes_of_operation">modes of operation</a>.</p>
-<p>The drop-down list of cyphers are all of the block cyphers that PHP's mcrypt uses. The disabled ones have not been incorporated into this library yet. If you know of a javascript implementation of one of the disabled cyphers I would be glad to hear about it on the <a href="https://code.google.com/p/js-mcrypt/">Google Code Page for this project</a>.
-<p>The drop-down list of modes of operation is again populated with all of the modes that PHP's mcrypt uses. Similarly the disabled options have not been implemented in this class. The next modes I plan on adding are cfb, and ofb. If you would like to assist, please check out the <a href="https://code.google.com/p/js-mcrypt/">Google Code Page for this project</a>.
+<p>The drop-down list of cyphers are all of the block cyphers that PHP's mcrypt uses. The disabled ones have not been incorporated into this library yet. If you know of a javascript implementation of one of the disabled cyphers I would be glad to hear about it on the <a href="https://code.google.com/p/js-mcrypt/">Google Code Page for this project</a>.</p>
+<p>The drop-down list of modes of operation is again populated with all of the modes that PHP's mcrypt uses. Similarly the disabled options have not been implemented in this class. I do not plan on implementing ofb as this is considered insecure by NIST. Stream is the mode used for stream cyphers and as no stream ciphers have yet been incorporated this mode has not been coded.</p>
 <p>Changing any option except the cypher texts will trigger the encryption with the new options. Changing the cypher text will trigger decryption. The php verification will only occur by submitting the form. If you're curious how the php is implemented, the source for this page is available on the <a href="https://code.google.com/p/js-mcrypt/">Google Code Page for this project</a>.</p>
 <script type="text/javascript">
 <!--

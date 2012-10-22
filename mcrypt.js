@@ -109,9 +109,12 @@ pub.Crypt=function(encrypt,text,IV,key, cipher, mode){
 	var chunkS=blockS;
 	var iv=new Array(blockS);
 	switch(mode){
+		case 'cfb':
+			chunkS=1;//8-bit
 		case 'cbc':
 		case 'ncfb':
 		case 'nofb':
+		case 'ctr':
 			if(!IV)
 				throw "mcrypt.Crypt: IV Required for mode "+mode;
 			if(IV.length!=blockS)
@@ -161,6 +164,16 @@ pub.Crypt=function(encrypt,text,IV,key, cipher, mode){
 				}
 			}
 			return out;
+		case 'cfb':
+			for(var i = 0; i < chunks; i++){
+				var temp=iv.slice(0);
+				blockCipherCalls[cipher](cipher,temp, cKey,true);
+				temp=temp[0]^text.charCodeAt(i);
+				iv.push(encrypt?temp:text.charCodeAt(i));
+				iv.shift();
+				out+=String.fromCharCode(temp);
+			}
+			return out.substr(0,orig);
 		case 'ncfb':
 			for(var i = 0; i < chunks; i++){
 				blockCipherCalls[cipher](cipher,iv, cKey,true);
@@ -178,6 +191,22 @@ pub.Crypt=function(encrypt,text,IV,key, cipher, mode){
 				blockCipherCalls[cipher](cipher,iv, cKey,true);
 				for(var j = 0; j < chunkS; j++)
 					out+=String.fromCharCode(text.charCodeAt((i*chunkS)+j)^iv[j]);
+			}
+			return out.substr(0,orig);
+		case 'ctr':
+			for(var i = 0; i < chunks; i++){
+				temp=iv.slice(0);
+				blockCipherCalls[cipher](cipher,temp, cKey,true);
+				for(var j = 0; j < chunkS; j++)
+					out+=String.fromCharCode(text.charCodeAt((i*chunkS)+j)^temp[j]);
+				var carry=1;
+				var index=chunkS;
+				do{
+					index--;
+					iv[index]+=1;
+					carry=iv[index]>>8;
+					iv[index]&=255;
+				}while(carry)
 			}
 			return out.substr(0,orig);
 	}
@@ -225,7 +254,7 @@ pub.list_algorithms=function(){
 }
 
 pub.list_modes=function(){
-	return ['ecb','cbc','ncfb','nofb'];
+	return ['ecb','cbc','cfb','ncfb','nofb','ctr'];
 }
 
 
