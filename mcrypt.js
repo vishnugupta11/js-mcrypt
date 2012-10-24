@@ -38,10 +38,11 @@
  * array containing the number of octets (bytes) in the block size,
  * and the number of octets in the key.
  */
- var ciphers={			//	block size,	key size
+ var ciphers={		//	block size,	key size
   "rijndael-128"	:[	16,			32],
   "rijndael-192"	:[	24,			32],
   "rijndael-256"	:[	32,			32],
+  "serpent"			:[	16,			32],
  }
  
  /* blockCipherCalls
@@ -58,6 +59,8 @@
  */
  var blockCipherCalls={};
  blockCipherCalls['rijndael-128']=function(cipher,block,key,encrypt){
+	if(key.length<32)
+		key+=Array(33-key.length).join(String.fromCharCode(0));
 	if(encrypt)
 		Rijndael.Encrypt(block,key);
 	else
@@ -66,7 +69,22 @@
  };
  blockCipherCalls['rijndael-192']=blockCipherCalls['rijndael-128'];
  blockCipherCalls['rijndael-256']=blockCipherCalls['rijndael-128'];
-
+ blockCipherCalls.serpent=function(cipher,block,key,encrypt){
+	if(encrypt)
+		Serpent.Encrypt(block);
+	else
+		Serpent.Decrypt(block);
+	return block;
+ };
+ blockCipherCalls.serpent.init=function(cipher,key,encrypt){
+	var keyA=[];
+	for(var i=0;i<key.length;i++)
+		keyA[i]=key.charCodeAt(i);
+	Serpent.Init(keyA);
+ };
+ blockCipherCalls.serpent.deinit=function(cipher,key,encrypt){
+	Serpent.Close();
+ };
  
  /**********************
  * END OF CIPHER DEFFS *
@@ -105,6 +123,8 @@ pub.Crypt=function(encrypt,text,IV,key, cipher, mode){
 	if(mode) cMode=mode; else mode=cMode;
 	if(!text)
 		return true;
+	if(blockCipherCalls[cipher].init)
+		blockCipherCalls[cipher].init(cipher,key,encrypt);
 	var blockS=ciphers[cipher][0];
 	var chunkS=blockS;
 	var iv=new Array(blockS);
@@ -140,7 +160,7 @@ pub.Crypt=function(encrypt,text,IV,key, cipher, mode){
 				for(var j = 0; j < chunkS; j++)
 					out+=String.fromCharCode(iv[j]);
 			}
-			return out;
+			break;
 		case 'cbc':
 			if(encrypt){
 				for(var i = 0; i < chunks; i++){
@@ -163,7 +183,7 @@ pub.Crypt=function(encrypt,text,IV,key, cipher, mode){
 						out+=String.fromCharCode(temp[j]^decr[j]);
 				}
 			}
-			return out;
+			break;
 		case 'cfb':
 			for(var i = 0; i < chunks; i++){
 				var temp=iv.slice(0);
@@ -173,7 +193,8 @@ pub.Crypt=function(encrypt,text,IV,key, cipher, mode){
 				iv.shift();
 				out+=String.fromCharCode(temp);
 			}
-			return out.substr(0,orig);
+			out=out.substr(0,orig);
+			break;
 		case 'ncfb':
 			for(var i = 0; i < chunks; i++){
 				blockCipherCalls[cipher](cipher,iv, cKey,true);
@@ -185,14 +206,16 @@ pub.Crypt=function(encrypt,text,IV,key, cipher, mode){
 						iv[j]=temp;
 				}
 			}
-			return out.substr(0,orig);
+			out=out.substr(0,orig);
+			break;
 		case 'nofb':
 			for(var i = 0; i < chunks; i++){
 				blockCipherCalls[cipher](cipher,iv, cKey,true);
 				for(var j = 0; j < chunkS; j++)
 					out+=String.fromCharCode(text.charCodeAt((i*chunkS)+j)^iv[j]);
 			}
-			return out.substr(0,orig);
+			out=out.substr(0,orig);
+			break;
 		case 'ctr':
 			for(var i = 0; i < chunks; i++){
 				temp=iv.slice(0);
@@ -208,9 +231,12 @@ pub.Crypt=function(encrypt,text,IV,key, cipher, mode){
 					iv[index]&=255;
 				}while(carry)
 			}
-			return out.substr(0,orig);
+			out=out.substr(0,orig);
+			break;
 	}
-	return false;
+	if(blockCipherCalls[cipher].deinit)
+		blockCipherCalls[cipher].deinit(cipher,key,encrypt);
+	return out;
 };
 
 //Gets the block size of the specified cipher
