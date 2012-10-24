@@ -17,6 +17,11 @@ $m=isset($_GET['hex_m'])&&$_GET['hex_m']?pack('H*',str_replace(' ','',$_GET['hex
 
 $crypted=mcrypt_encrypt($cipher,$key,$m,$mode,$iv);
 
+if(strlen($iv)!=mcrypt_get_iv_size($cipher,$mode))
+	echo "Error IV:".strlen($iv).'!='.mcrypt_get_block_size($cipher,$mode)."</br>\n";
+if(strlen($key)!=mcrypt_get_key_size($cipher,$mode))
+	echo "Warning Key Lengh \"".strlen($key).'"!= maxKeyLength "'.mcrypt_get_key_size($cipher,$mode)."\"</br>\n";
+
 $c=isset($_GET['hex_c'])&&$_GET['hex_c']?pack('H*',str_replace(' ','',$_GET['hex_c'])):$crypted;
 
 $plain=mcrypt_decrypt($cipher,$key,$c,$mode,$iv);
@@ -41,6 +46,7 @@ $data=json_encode(array(
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<script type="text/javascript" src="Serpent.js"></script>
 <script type="text/javascript" src="rijndael.js"></script>
 <script type="text/javascript" src="mcrypt.js"></script>
 </head>
@@ -56,7 +62,7 @@ $data=json_encode(array(
 <tr><td>Mode of Operation:</td><td><select name="mode" onchange="setCrypt();">
 		<?php echo_options($modes,$mode)?>
 		</select></td></tr>
-<tr><td>Hex IV:</td><td><input name="iv" size="48" onchange="data.iv=this.value; encrypt();"/></td></tr>
+<tr><td>IV:</td><td><input name="iv" size="48" onchange="data.iv=this.value; encrypt();"/></td></tr>
 <tr><td>Hex IV:</td><td><textarea name="hex_iv" onchange="data.iv=hex2bin(this.value); encrypt();"></textarea></td></tr>
 
 <tr><td>Plain Text:</td>
@@ -78,10 +84,10 @@ Check With PHP's Mcrypt:<input type="submit" value="Go"/>
 </form>
 </div>
 <h2>Java Script Mcrypt</h2>
-<p>This is a demo page for a javascript class that tries to implement a javascript version of PHP's mcrypt. This class just takes blocks ciphers and gives a common interface to them and extends their capability to encrypt things by enabling <a href="http://en.wikipedia.org/wiki/Block_cipher_modes_of_operation">modes of operation</a>.</p>
-<p>The drop-down list of cyphers are all of the block cyphers that PHP's mcrypt uses. The disabled ones have not been incorporated into this library yet. If you know of a javascript implementation of one of the disabled cyphers I would be glad to hear about it on the <a href="https://code.google.com/p/js-mcrypt/">Google Code Page for this project</a>.</p>
-<p>The drop-down list of modes of operation is again populated with all of the modes that PHP's mcrypt uses. Similarly the disabled options have not been implemented in this class. I do not plan on implementing ofb as this is considered insecure by NIST. Stream is the mode used for stream cyphers and as no stream ciphers have yet been incorporated this mode has not been coded.</p>
-<p>Changing any option except the cypher texts will trigger the encryption with the new options. Changing the cypher text will trigger decryption. The php verification will only occur by submitting the form. If you're curious how the php is implemented, the source for this page is available on the <a href="https://code.google.com/p/js-mcrypt/">Google Code Page for this project</a>.</p>
+<p>This is a demo page for a javascript class that implements a javascript version of PHP's mcrypt. This class takes blocks ciphers, gives a common interface to them, and extends their encryption capability by enabling <a href="http://en.wikipedia.org/wiki/Block_cipher_modes_of_operation">modes of operation</a>.</p>
+<p>The drop-down list of ciphers contains all of the ciphers that PHP's mcrypt uses. The disabled ones have not been incorporated into this library yet. If you know of a javascript implementation of one or more of the disabled ciphers I would be glad to hear about it on the <a href="https://code.google.com/p/js-mcrypt/">Google Code page for this project</a>.</p>
+<p>The drop-down list of modes of operation is again populated with all of the modes that PHP's mcrypt uses. Similarly, the disabled options have not been implemented in this class. I do not plan on implementing ofb (8-bit) as this is considered insecure by NIST. Stream is the mode used for stream ciphers and as no stream ciphers have yet been incorporated, this mode has not been coded.</p>
+<p>Changing any option except the cypher texts will trigger the encryption with the new options. Changing the cypher text will trigger decryption. The php verification will only occur by submitting the form. If you're curious as to how the php is implemented, the source for this page is available on the <a href="https://code.google.com/p/js-mcrypt/">Google Code page for this project</a>.</p>
 <script type="text/javascript">
 <!--
 var temp=mcrypt.list_algorithms();
@@ -103,7 +109,6 @@ var setCrypt=function(){
 	var cr=document.main.crypt.value;
 	var mod=document.main.mode.value;
 	
-	data.key=pad(data.key,mcrypt.get_key_size(cr,mod));
 	data.iv=pad(data.iv,mcrypt.get_iv_size(cr,mod));
 	
 	document.main.key.value=data.key;
