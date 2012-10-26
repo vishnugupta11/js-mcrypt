@@ -46,6 +46,7 @@ $data=json_encode(array(
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Javascript Mcrypt</title>
 <script type="text/javascript" src="Serpent.js"></script>
 <script type="text/javascript" src="rijndael.js"></script>
 <script type="text/javascript" src="mcrypt.js"></script>
@@ -85,7 +86,7 @@ Check With PHP's Mcrypt:<input type="submit" value="Go"/>
 </div>
 <h2>Java Script Mcrypt</h2>
 <p>This is a demo page for a javascript class that implements a javascript version of PHP's mcrypt. This class takes blocks ciphers, gives a common interface to them, and extends their encryption capability by enabling <a href="http://en.wikipedia.org/wiki/Block_cipher_modes_of_operation">modes of operation</a>.</p>
-<p>The drop-down list of ciphers contains all of the ciphers that PHP's mcrypt uses. The disabled ones have not been incorporated into this library yet. If you know of a javascript implementation of one or more of the disabled ciphers I would be glad to hear about it on the <a href="https://code.google.com/p/js-mcrypt/">Google Code page for this project</a>.</p>
+<p>The drop-down list of ciphers contains all of the ciphers that PHP's mcrypt uses. The disabled ones have not been incorporated into this library yet. If you know of a javascript implementation of one or more of the disabled ciphers I would be glad to hear about it on the <a href="https://code.google.com/p/js-mcrypt/">Google Code page for this project</a>. Of particular note is AES.</p>
 <p>The drop-down list of modes of operation is again populated with all of the modes that PHP's mcrypt uses. Similarly, the disabled options have not been implemented in this class. I do not plan on implementing ofb (8-bit) as this is considered insecure by NIST. Stream is the mode used for stream ciphers and as no stream ciphers have yet been incorporated, this mode has not been coded.</p>
 <p>Changing any option except the cypher texts will trigger the encryption with the new options. Changing the cypher text will trigger decryption. The php verification will only occur by submitting the form. If you're curious as to how the php is implemented, the source for this page is available on the <a href="https://code.google.com/p/js-mcrypt/">Google Code page for this project</a>.</p>
 <script type="text/javascript">
