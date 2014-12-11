@@ -91,6 +91,7 @@ Check With PHP's Mcrypt:<input type="submit" value="Go"/>
 <p>Changing any option except the cypher texts will trigger the encryption with the new options. Changing the cypher text will trigger decryption. The php verification will only occur by submitting the form. If you're curious as to how the php is implemented, the source for this page is available on the <a href="https://code.google.com/p/js-mcrypt/">Google Code page for this project</a>.</p>
 <script type="text/javascript">
 <!--
+window.onerror=function(err){alert('Error:\n'+err+"\nFor more details look in the console.");};
 var temp=mcrypt.list_algorithms();
 var sel=document.main.crypt.childNodes;
 for(var i=sel.length-1 ; i>=0 ; i--)
